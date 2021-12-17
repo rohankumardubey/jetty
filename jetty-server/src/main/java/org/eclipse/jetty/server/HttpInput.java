@@ -414,6 +414,40 @@ public class HttpInput extends ServletInputStream implements Runnable
             " eof=" + _consumedEof;
     }
 
+    /**
+     * <p>{@link Content} interceptor that can be registered using {@link #setInterceptor(Interceptor)} or
+     * {@link #addInterceptor(Interceptor)}.
+     * When {@link Content} instances are generated, they are passed to the registered interceptor (if any)
+     * that is then responsible for providing the actual content that is consumed by {@link #read(byte[], int, int)} and its
+     * sibling methods.</p>
+     * <p>A minimal implementation could be as simple as:
+     * <pre>
+     * public HttpInput.Content readFrom(HttpInput.Content content)
+     * {
+     *     LOGGER.debug("read content: {}", asString(content));
+     *     return content;
+     * }
+     * </pre>
+     * which would not do anything with the content besides logging it. A more involved implementation could look like the
+     * following:
+     * <pre>
+     * public HttpInput.Content readFrom(HttpInput.Content content)
+     * {
+     *     if (content.hasContent())
+     *         processContent(content.getByteBuffer());
+     *     if (content.isEof())
+     *         endProcessing();
+     *     return processedContent();
+     * }
+     * </pre>
+     * Please note that the {@link Content} contract must be respected by implementations, like for instance
+     * that calling {@link Content#getByteBuffer()} when {@link Content#isSpecial()} returns <code>true</code>
+     * throws {@link IllegalStateException}.
+     * </p>
+     * <p>Implementations implementing both this interface and {@link Destroyable} will have their {@link Destroyable#destroy()}
+     * method called when {@link #recycle()} is called.</p>
+     * @see org.eclipse.jetty.server.handler.gzip.GzipHttpInputInterceptor
+     */
     public interface Interceptor
     {
         /**
