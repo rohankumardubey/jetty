@@ -434,18 +434,30 @@ public class HttpInput extends ServletInputStream implements Runnable
      * public HttpInput.Content readFrom(HttpInput.Content content)
      * {
      *     if (content.hasContent())
-     *         processContent(content.getByteBuffer());
+     *         this.processedContent = processContent(content.getByteBuffer());
      *     if (content.isEof())
-     *         endProcessing();
-     *     return processedContent();
+     *         disposeResources();
+     *     return content.isSpecial() ? content : this.processedContent;
      * }
      * </pre>
-     * Please note that the {@link Content} contract must be respected by implementations, like for instance
-     * that calling {@link Content#getByteBuffer()} when {@link Content#isSpecial()} returns <code>true</code>
-     * throws {@link IllegalStateException}.
+     * Implementors of this interface must keep the following in mind:
+     * <ul>
+     *     <li>Calling {@link Content#getByteBuffer()} when {@link Content#isSpecial()} returns <code>true</code> throws
+     *     {@link IllegalStateException}.</li>
+     *     <li>A {@link Content} can both be non-special and have {@link Content#isEof()} return <code>true</code>.</li>
+     *     <li>{@link Content} extends {@link Callback} to manage the lifecycle of the contained byte buffer. The code calling
+     *     {@link #readFrom(Content)} is responsible for managing the lifecycle of both the passed and the returned content
+     *     instances, once {@link ByteBuffer#hasRemaining()} returns <code>false</code> {@link HttpInput} will make sure
+     *     {@link Callback#succeeded()} is called, or {@link Callback#failed(Throwable)} if an error occurs.</li>
+     *     <li>After {@link #readFrom(Content)} is called for the first time, subsequent {@link #readFrom(Content)} calls will
+     *     occur only after the contained byte buffer is empty (see above) or at any time if the returned content was special.</li>
+     *     <li>Once {@link #readFrom(Content)} returned a special content, subsequent calls to {@link #readFrom(Content)} must
+     *     always return the same special content.</li>
+     *     <li>Implementations implementing both this interface and {@link Destroyable} will have their
+     *     {@link Destroyable#destroy()} method called when {@link #recycle()} is called.</li>
+     * </ul>
      * </p>
-     * <p>Implementations implementing both this interface and {@link Destroyable} will have their {@link Destroyable#destroy()}
-     * method called when {@link #recycle()} is called.</p>
+     * <p></p>
      * @see org.eclipse.jetty.server.handler.gzip.GzipHttpInputInterceptor
      */
     public interface Interceptor
