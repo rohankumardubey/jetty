@@ -612,7 +612,9 @@ public class HttpInput extends ServletInputStream implements Runnable
         }
 
         /**
-         * Check if the content is special.
+         * Check if the content is special. A content is deemed special
+         * if it does not hold bytes but rather conveys a special event,
+         * like when EOF has been reached or an error has occurred.
          * @return true if the content is special, false otherwise.
          */
         public boolean isSpecial()
