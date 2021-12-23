@@ -119,7 +119,6 @@ public class BlockingContentProducerTest
         }
     }
 
-
     @Test
     public void testBlockingContentProducerEofContentIsPassedToInterceptor() throws Exception
     {
